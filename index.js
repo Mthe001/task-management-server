@@ -127,30 +127,6 @@ async function run() {
 
         // Create Task - POST /tasks
         
-        // app.post("/tasks", async (req, res) => {
-        //     try {
-        //         const { email, title, description, status, category } = req.body;  // Add category
-
-        //         if (!email || !title || !category) {  // Ensure category is provided
-        //             return res.status(400).send({ message: "Email, Title, and Category are required" });
-        //         }
-
-        //         const result = await tasksCollection.insertOne({
-        //             email,
-        //             title,
-        //             description: description || "",
-        //             status: status || 'pending',
-        //             category,  // Include category in the task
-        //             timestamp: new Date().toISOString(),
-        //         });
-
-        //         return res.status(201).send({ message: "Task created successfully", task: result.ops[0] });
-        //     } catch (error) {
-        //         console.error("Error creating task:", error);
-        //         return res.status(500).send({ message: "Failed to create task" });
-        //     }
-        // });
-
        
         app.post("/tasks", async (req, res) => {
             const { email, title, description, status, category } = req.body;
