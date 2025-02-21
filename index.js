@@ -36,7 +36,7 @@ async function run() {
 
        const database = client.db("Task24Hr");
        const usersCollection = database.collection("users");
-        const tasksCollection = database.collection("tasks"); // Tasks collection
+       const tasksCollection = database.collection("tasks"); // Tasks collection
          
 
        
@@ -127,28 +127,80 @@ async function run() {
 
         // Create Task - POST /tasks
         
+        // app.post("/tasks", async (req, res) => {
+        //     try {
+        //         const { email, title, description, status, category } = req.body;  // Add category
+
+        //         if (!email || !title || !category) {  // Ensure category is provided
+        //             return res.status(400).send({ message: "Email, Title, and Category are required" });
+        //         }
+
+        //         const result = await tasksCollection.insertOne({
+        //             email,
+        //             title,
+        //             description: description || "",
+        //             status: status || 'pending',
+        //             category,  // Include category in the task
+        //             timestamp: new Date().toISOString(),
+        //         });
+
+        //         return res.status(201).send({ message: "Task created successfully", task: result.ops[0] });
+        //     } catch (error) {
+        //         console.error("Error creating task:", error);
+        //         return res.status(500).send({ message: "Failed to create task" });
+        //     }
+        // });
+
+       
         app.post("/tasks", async (req, res) => {
+            const { email, title, description, status, category } = req.body;
+
+            // Ensure required fields are provided
+            if (!email || !title || !category) {
+                return res.status(400).send({ message: "Email, Title, and Category are required" });
+            }
+
             try {
-                const { email, title, description, status } = req.body;
-
-                if (!email || !title) {
-                    return res.status(400).send({ message: "Email and Title are required" });
-                }
-
+                // Insert the new task into the database
                 const result = await tasksCollection.insertOne({
                     email,
                     title,
                     description: description || "",
-                    status: status || 'pending',
+                    status: status || "pending",
+                    category, // Include category in the task
                     timestamp: new Date().toISOString(),
                 });
 
-                return res.status(201).send({ message: "Task created successfully", task: result.ops[0] });
+                // Send response with the task including its inserted ID
+                res.status(201).send({
+                    message: "Task created successfully",
+                    task: { _id: result.insertedId, email, title, description, status, category, timestamp: new Date().toISOString() },
+                });
             } catch (error) {
                 console.error("Error creating task:", error);
-                return res.status(500).send({ message: "Failed to create task" });
+                res.status(500).send({ message: "Failed to create task", error: error.message });
             }
         });
+
+        app.get("/tasks", async (req, res) => {
+            try {
+                const tasks = await tasksCollection.find().toArray();
+                if (!tasks || tasks.length === 0) {
+                    return res.status(404).json({ message: "No tasks found" });
+                }
+                res.status(200).json({ tasks });  // Send the tasks array
+            } catch (error) {
+                console.error("Error fetching tasks:", error);
+                res.status(500).json({ message: "Failed to fetch tasks", error: error.message });
+            }
+        });
+
+
+
+
+
+
+
 
            
 
