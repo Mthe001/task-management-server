@@ -6,7 +6,10 @@ const port = process.env.PORT || 5000;
 
 
 //middleware
-app.use(cors());
+app.use(cors({
+    origin:"http://localhost:5173",
+    credentials:true
+}));
 app.use(express.json());
 
 
@@ -31,32 +34,127 @@ async function run() {
 
 
 
+       const database = client.db("Task24Hr");
+       const usersCollection = database.collection("users");
+        const tasksCollection = database.collection("tasks"); // Tasks collection
+         
 
-       const userCollection = client.db("taskManager").collection("users");
-     
-       app.post('/users', async (req, res) => {
-           const newUser = req.body;
-           const result = await userCollection.insertOne(newUser);
-           res.json(result)});
+       
+         
+         //save user  data to the database
+
+        // Create User - POST /users
+        app.post("/users", async (req, res) => {
+            try {
+                const { email, name, image } = req.body; // Get user data from request body
+
+                if (!email) {
+                    return res.status(400).send({ message: "Email is required" });
+                }
+
+                // Check if the user already exists by email
+                const existingUser = await usersCollection.findOne({ email });
+                if (existingUser) {
+                    return res.status(400).send({ message: "User already exists" });
+                }
+
+                // Insert new user into the database
+                const result = await usersCollection.insertOne({
+                    email,
+                    name,
+                    image,
+                    location: req.body.location || '',
+                    description: req.body.description || ''
+                });
+
+                return res.status(201).send({ message: "User created successfully", user: result });
+            } catch (error) {
+                console.error("Error creating user:", error);
+                return res.status(500).send({ message: "Server error" });
+            }
+        });
+         
+        // Update User - PUT /users
+        app.put("/users", async (req, res) => {
+            try {
+                const { email, name, location, description, image } = req.body; // Get updated user data from request body
+
+                if (!email) {
+                    return res.status(400).send({ message: "Email is required" });
+                }
+
+                // Check if the user exists
+                const existingUser = await usersCollection.findOne({ email });
+                if (!existingUser) {
+                    return res.status(404).send({ message: "User not found" });
+                }
+
+                // Update user data
+                const updatedUser = await usersCollection.updateOne(
+                    { email },
+                    { $set: { name, location, description, image } }
+                );
+
+                return res.send({ message: "User updated successfully", updatedUser });
+            } catch (error) {
+                console.error("Error updating user:", error);
+                return res.status(500).send({ message: "Server error" });
+            }
+        });
+
+        
+        // Get User Profile - GET /users/:email
+        app.get("/users/:email", async (req, res) => {
+            try {
+                const email = req.params.email; // Get email from URL parameter
+
+                // Find the user by email
+                const user = await usersCollection.findOne({ email });
+
+                if (!user) {
+                    return res.status(404).send({ message: "User not found" });
+                }
+
+                // Return user data
+                return res.send({ message: "User profile fetched successfully", user });
+            } catch (error) {
+                console.error("Error fetching user profile:", error);
+                return res.status(500).send({ message: "Server error" });
+            }
+        });
+        
+
+
+        // Create Task - POST /tasks
+        
+        app.post("/tasks", async (req, res) => {
+            try {
+                const { email, title, description, status } = req.body;
+
+                if (!email || !title) {
+                    return res.status(400).send({ message: "Email and Title are required" });
+                }
+
+                const result = await tasksCollection.insertOne({
+                    email,
+                    title,
+                    description: description || "",
+                    status: status || 'pending',
+                    timestamp: new Date().toISOString(),
+                });
+
+                return res.status(201).send({ message: "Task created successfully", task: result.ops[0] });
+            } catch (error) {
+                console.error("Error creating task:", error);
+                return res.status(500).send({ message: "Failed to create task" });
+            }
+        });
 
            
 
         app.get('/', (req, res) => {
             res.send('task manager is tasking!');
         });
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
