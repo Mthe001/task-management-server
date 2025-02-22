@@ -5,11 +5,26 @@ const cors = require('cors');
 const port = process.env.PORT || 5000;
 
 
-//middleware
+
+// Middleware
+const allowedOrigins = [
+    "http://localhost:5173", // Development mode origin
+    "https://task-manager-240.web.app", // Deployed app
+     "https://task-manager-240.firebaseapp.com"
+];
+
 app.use(cors({
-    origin:"http://localhost:5173",
-    credentials:true
+    origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true); // Allow access
+        } else {
+            callback(new Error("Not allowed by CORS")); // Deny access
+        }
+    },
+    credentials: true
 }));
+
+
 app.use(express.json());
 // Global Error Handler Middleware
 app.use((err, req, res, next) => {
